@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>薪資計算表</title>
+  <style>
+    /* 基本頁面設計 */
+    body {
+      font-family: 'Consolas', 'Courier New', monospace;
+      background-color: #fdfdfd;
+      color: #333;
+      margin: 0;
+      padding: 20px;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .calculator-container {
+      background-color: #f9f9f9;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+      max-width: 600px;
+      width: 100%;
+    }
+
+    .input-group {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 15px;
+      align-items: center;
+    }
+
+    .input-inline {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .calendar-header {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      background-color: #0078d4;
+      color: white;
+      padding: 10px 0;
+      text-align: center;
+      font-weight: bold;
+      border-radius: 5px;
+    }
+
+    .calendar-container {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 5px;
+      margin-top: 5px;
+    }
+
+    .day-cell {
+      padding: 10px;
+      background-color: #eafaf1;
+      text-align: center;
+      cursor: pointer;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+
+    .day-cell:hover {
+      background-color: #d1f2da;
+    }
+
+    .day-cell input {
+      width: 50px;
+      margin-top: 5px;
+    }
+
+    label {
+      font-size: 1rem;
+    }
+
+    input[type="number"] {
+      padding: 5px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      font-size: 1rem;
+    }
+
+    #hourly-rate, #bonus, #deduction {
+      width: 120px;
+      text-align: left;
+    }
+
+    #hourly-rate {
+      text-align: left;
+    }
+
+    select {
+      padding: 5px;
+      font-size: 1rem;
+      margin-bottom: 15px;
+    }
+
+    button {
+      background-color: #0078d4;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      font-size: 1rem;
+      cursor: pointer;
+      border-radius: 5px;
+      width: 100%;
+    }
+
+    button:hover {
+      background-color: #005fa1;
+    }
+
+    .result {
+      background-color: #eafaf1;
+      padding: 10px;
+      margin-top: 15px;
+      font-size: 1.2rem;
+      text-align: center;
+      border-radius: 5px;
+    }
+
+    /* 假日文字顏色樣式 */
+    .holiday {
+      color: red;
+    }
+
+  </style>
+</head>
+<body>
+  <h1>薪資計算表</h1>
+  <div class="calculator-container">
+    <div class="input-inline">
+      <div class="input-group">
+        <label for="year">年份：</label>
+        <select id="year">
+          <option value="2025" selected>2025</option>
+          <option value="2026">2026</option>
+          <option value="2027">2027</option>
+          <option value="2028">2028</option>
+        </select>
+      </div>
+
+      <div class="input-group">
+        <label for="month">月份：</label>
+        <select id="month">
+          <option value="1" selected>1 月</option>
+          <option value="2">2 月</option>
+          <option value="3">3 月</option>
+          <option value="4">4 月</option>
+          <option value="5">5 月</option>
+          <option value="6">6 月</option>
+          <option value="7">7 月</option>
+          <option value="8">8 月</option>
+          <option value="9">9 月</option>
+          <option value="10">10 月</option>
+          <option value="11">11 月</option>
+          <option value="12">12 月</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="input-group">
+      <label for="hourly-rate">時薪：</label>
+      <input type="number" id="hourly-rate" placeholder="請輸入時薪">
+    </div>
+
+    <div class="calendar-header">
+      <div class="holiday">日</div>
+      <div>一</div>
+      <div>二</div>
+      <div>三</div>
+      <div>四</div>
+      <div>五</div>
+      <div class="holiday">六</div>
+    </div>
+    <div id="calendar" class="calendar-container"></div>
+
+    <div class="input-group">
+      <label for="bonus">業績獎金：</label>
+      <input type="number" id="bonus" placeholder="請輸入業績獎金">
+    </div>
+
+    <div class="input-group">
+      <label for="deduction">扣除薪資：</label>
+      <input type="number" id="deduction" placeholder="請輸入扣除金額">
+    </div>
+
+    <button onclick="calculateSalary()">計算薪資</button>
+    <button onclick="clearForm()" style="background-color: #d9534f; margin-top: 10px;">清除表單</button>
+
+    <div id="result" class="result" style="display: none;"></div>
+  </div>
+  <script>
+    function generateCalendar(year, month) {
+      const calendarContainer = document.getElementById('calendar');
+      calendarContainer.innerHTML = '';
+      const daysInMonth = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+      if ((year % 4 === 0 && year % 100 !== 0) || year % 400 === 0) {
+        daysInMonth[1] = 29; // 閏年
+      }
+
+      const firstDay = new Date(year, month - 1, 1).getDay();
+      for (let i = 0; i < firstDay; i++) {
+        const emptyCell = document.createElement('div');
+        emptyCell.className = 'day-cell';
+        calendarContainer.appendChild(emptyCell);
+      }
+
+      const days = daysInMonth[month - 1];
+      for (let day = 1; day <= days; day++) {
+        const dayCell = document.createElement('div');
+        dayCell.className = 'day-cell';
+        dayCell.innerHTML = `${day}<br><input type="number" id="day-${month}-${day}" placeholder="">`;
+        calendarContainer.appendChild(dayCell);
+      }
+    }
+
+    document.getElementById('year').addEventListener('change', (event) => {
+      const year = parseInt(event.target.value);
+      const month = parseInt(document.getElementById('month').value);
+      generateCalendar(year, month);
+    });
+
+    document.getElementById('month').addEventListener('change', (event) => {
+      const month = parseInt(event.target.value);
+      const year = parseInt(document.getElementById('year').value);
+      generateCalendar(year, month);
+    });
+
+    function calculateSalary() {
+      const hourlyRate = parseFloat(document.getElementById('hourly-rate').value) || 0;
+      let totalSalary = 0;
+      const month = parseInt(document.getElementById('month').value);
+
+      for (let day = 1; day <= 31; day++) {
+        const dayInput = document.getElementById(`day-${month}-${day}`);
+        if (dayInput) {
+          const hoursWorked = parseFloat(dayInput.value) || 0;
+          if (hoursWorked < 0) {
+            alert(`第 ${day} 天輸入的工時值必須為正數`);
+            return;
+          }
+          totalSalary += hourlyRate * hoursWorked;
+        }
+      }
+
+      const bonus = parseFloat(document.getElementById('bonus').value) || 0;
+      if (bonus < 0) {
+        alert("輸入的業績獎金必須為正數");
+        return;
+      }
+
+      const deduction = parseFloat(document.getElementById('deduction').value) || 0;
+      if (deduction < 0) {
+        alert("輸入的扣除金額必須為正數");
+        return;
+      }
+
+      totalSalary += bonus - deduction;
+
+      const resultDiv = document.getElementById('result');
+      resultDiv.textContent = `總薪資：${Math.round(totalSalary)} 元`;
+      resultDiv.style.display = 'block';
+    }
+
+    function clearForm() {
+      document.getElementById('hourly-rate').value = '';
+      document.getElementById('bonus').value = '';
+      document.getElementById('deduction').value = '';
+      const month = parseInt(document.getElementById('month').value);
+      for (let day = 1; day <= 31; day++) {
+        const dayInput = document.getElementById(`day-${month}-${day}`);
+        if (dayInput) dayInput.value = '';
+      }
+      document.getElementById('result').style.display = 'none';
+    }
+
+    generateCalendar(2025, 1); // 初始化顯示2025年1月
+  </script>
+</body>
+</html>
